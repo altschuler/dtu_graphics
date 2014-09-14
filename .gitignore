@@ -1,0 +1,15 @@
+GPATH
+GTAGS
+GRTAGS
+
+*.filters
+*.user
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+
+*.suo
+*.sln
+*.sln.docstates.suo
+
+*.o
