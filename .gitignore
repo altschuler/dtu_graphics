@@ -13,3 +13,8 @@ GRTAGS
 *.sln.docstates.suo
 
 *.o
+
+*.el
+*.log
+*.aux
+*.out
