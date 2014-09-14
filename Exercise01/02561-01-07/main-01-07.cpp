@@ -12,37 +12,55 @@ int Index = 0;
 
 //----------------------------------------------------------------------------
 
-void triangle(const vec2& a, const vec2& b, const vec2& c) {
+void square(const vec2& a, const vec2& b, const vec2& c, const vec2& d) {
     points.push_back(a);
 	points.push_back(b);
 	points.push_back(c);
+
+	points.push_back(a);
+	points.push_back(c);
+	points.push_back(d);
 }
 
 //----------------------------------------------------------------------------
 
-void divide_triangle(const vec2& a, const vec2& b, const vec2& c, int count) {
+void divide_square(const vec2& a, const vec2& b, const vec2& c, const vec2& d, int count) {
     if (count > 0) {
-        vec2 v0 = ( a + b ) / 2.0;
-        vec2 v1 = ( a + c ) / 2.0;
-        vec2 v2 = ( b + c ) / 2.0;
-        divide_triangle( a, v0, v1, count - 1 );
-        divide_triangle( c, v1, v2, count - 1 );
-        divide_triangle( b, v2, v0, count - 1 );
+		float d = length((b - a) / 3.0f);
+
+		vec2 dx(d, 0.0f);
+		vec2 dy(0.0f, d);
+
+		for (int y = 0; y < 3; y++) {
+			for (int x = 0; x < 3; x++) {
+
+				if (x == 1 && y == 1) continue;
+
+				divide_square(a + x*dx     + y*dy,
+							  a + (x+1)*dx + y*dy,
+							  a + (x+1)*dx + (y+1)*dy,
+							  a + x*dx     + (y+1)*dy,
+							  count - 1);
+			}
+		}
     } else {
-        triangle( a, b, c );    // draw triangle at end of recursion
+        square( a, b, c, d );
     }
 }
 
 //----------------------------------------------------------------------------
 
 void init( void ) {
-    vec2 vertices[3] = {
-        vec2( -1.0, -1.0 ), vec2( 0.0, 1.0 ), vec2( 1.0, -1.0 )
+    vec2 vertices[4] = {
+        vec2( -1.0, -1.0 ),
+		vec2(  1.0, -1.0 ),
+		vec2(  1.0,  1.0 ),
+        vec2( -1.0,  1.0 )
     };
 
     // Subdivide the original triangle
-    divide_triangle( vertices[0], vertices[1], vertices[2],
-                     NumTimesToSubdivide );
+    divide_square( vertices[0], vertices[1], vertices[2], vertices[3],
+				   NumTimesToSubdivide );
 
     // Create a vertex array object
     GLuint vao;
@@ -59,7 +77,7 @@ void init( void ) {
     GLuint program = InitShader( "const-shader.vert", "const-shader.frag", "fragColor" );
     glUseProgram( program );
 
-    // Initialize the vertex position attribute from the vertex shader    
+    // Initialize the vertex position attribute from the vertex shader
     GLuint loc = glGetAttribLocation( program, "position" );
     glEnableVertexAttribArray( loc );
     glVertexAttribPointer( loc, 2, GL_FLOAT, GL_FALSE, 0,
@@ -90,7 +108,7 @@ int main( int argc, char **argv ) {
     glutCreateWindow( "02561-01-07" );
 
 	Angel::InitOpenGL();
-	
+
     init();
 
     glutDisplayFunc( display );
