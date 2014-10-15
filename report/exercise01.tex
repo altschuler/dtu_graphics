@@ -1,27 +1,278 @@
 \section{Exercise 1}
 \subsection{Part 1}
-\begin{figure}[h]
-  \centering
-  \includegraphics[height=100pt]{images/exer_1_1}
-\end{figure}
+\fig{images/exer_1_1}
+A brief explanation of each function:
+
+\begin{description}
+\item [display] Does the actual OpenGL drawing, by clearing the screen, setting the shader and drawing the triangles. It also swaps buffers, which is redundant since we're only interested
+
+\item [reshape] Sets the viewport when the window is resized.
+
+\item[loadBufferData] Loads the \texttt{vertexData} into the GPU
+
+\item[loadShader] Loads the vertex and fragment shaders using an
+  \texttt{Angel} function
+
+\item[main] Initializes OpenGL, registers handlers for the display and reshape events, and loads the data via the above mentioned functions.
+
+\end{description}
+The \texttt{vertexData} for the rendered image is as follows
+
+\begin{lstlisting}
+const int NUMBER_OF_VERTICES = 6;
+Vertex vertexData[NUMBER_OF_VERTICES] = {
+	{ vec2( -0.5, -0.5 ), vec3( 1.0, 0.0, 0.0 ) },
+	{ vec2(  0.5, -0.5 ), vec3( 0.0, 1.0, 0.0 ) },
+	{ vec2(  0.5,  0.5 ), vec3( 0.0, 0.0, 1.0 ) },
+
+	{ vec2( -0.5, -0.5 ), vec3( 1.0, 1.0, 1.0 ) },
+	{ vec2(  0.5,  0.5 ), vec3( 1.0, 1.0, 1.0 ) },
+	{ vec2( -0.5,  0.5 ), vec3( 1.0, 1.0, 1.0 ) }
+}
+\end{lstlisting}
 
 \subsection{Part 2}
-\begin{figure}[h]
-  \centering
-  \includegraphics[height=100pt]{images/exer_1_2}
-\end{figure}
+\fig{images/exer_1_2}
+
+\subsubsection{a}
+
+The functions' responsibilities are the same as in the previous exercise, but there is a new function \texttt{loadGeometry} which utilizes \texttt{loadBufferData} to create a rectangle and triangle vertex array buffer.
+
+\subsubsection{b}
+The below code includes the coloring of part C (red, green and blue vertices)
+\begin{lstlisting}
+// in loadGeometry:
+vec3 redColor(1.0f, 0.0f, 0.0f);
+vec3 greenColor(0.0f, 1.0f, 0.0f);
+vec3 blueColor(0.0f, 0.0f, 1.0f);
+Vertex triangleData[triangleSize] = {
+	{ vec2(2.0, 2.0), redColor },
+	{ vec2(5.0, 2.0), greenColor },
+	{ vec2(3.5, 5.0), blueColor }
+};
+
+// Globally defined GLuint triangleVertexArrayBuffer
+triangleVertexArrayBuffer = loadBufferData(triangleData, triangleSize);
+\end{lstlisting}
+
+\subsubsection{c}
+We are using column matrices, so the x and y coordinates are located on the bottom of the transformation matrix.
+
+\begin{lstlisting}
+// in display:
+mat4 modelViewTri = mat4(
+    1, 0, 0, 0,
+	0, 1, 0, 0,
+	0, 0, 1, 0,
+	6, 7, 0, 1
+);
+
+glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, modelViewTri);
+glBindVertexArray(triangleVertexArrayBuffer);
+glDrawArrays(GL_TRIANGLE_FAN, 0, triangleSize);
+\end{lstlisting}
+
+\subsubsection{d}
+The rotation transformation matrix is constructed using \texttt{sin} and \texttt{cos}:
+
+\begin{lstlisting}
+// global
+const GLfloat DEG_TO_RAD = M_PI / 180.0;
+
+// in display:
+GLfloat rot = -45.0 * DEG_TO_RAD;
+mat4 modelViewRect = mat4(
+    cos(rot), -sin(rot), 0, 0,
+    sin(rot),  cos(rot), 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1
+);
+
+glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, modelViewRect);
+glBindVertexArray(rectangleVertexArrayBuffer);
+glDrawArrays(GL_TRIANGLE_FAN, 0, rectangleSize);
+\end{lstlisting}
 
 \subsection{Part 3}
-\begin{figure}[h]
-  \centering
-  \includegraphics[height=100pt]{images/exer_1_3}
-\end{figure}
+\fig{images/exer_1_3}
+
+\subsubsection{a}
+\texttt{glDrawArrays} instructs OpenGL to draw the buffered vertex data linearly in the order it was loaded. \texttt{glDrawElements} takes an \texttt{indices} argument that holds a list of ordered indices of the vertices to draw. This means that vertices can be reused, which can make a huge difference for meshes that share a lot of vertices, but it also requires OpenGL to transfer more data to the GPU, which is expensive.
+
+\subsubsection{b}
+Consider the data \texttt{vertices = [A, B, C, D, E]}, and assume we are drawing with \texttt{glDrawArrays}:
+
+\begin{description}
+\item[\texttt{GL\_TRIANGLES}]
+  will draw a triangle for every third vertex, discarding any remainders. \texttt{vertices} would be drawn as a single triangle \texttt{\{A,B,C\}} and \texttt{D,E} would be discarded.
+
+\item[\texttt{GL\_TRIANGLE\_FAN}] will use the first vertex as anchor, and will draw a triangle for every other consecutive pair of vertices. \texttt{vertices} would thus be drawn as \texttt{\{A,B,C\}, \{A,C,D\}, \{A,D,E\}}.
+
+\item[\texttt{GL\_TRIANGLE\_STRIP}]
+   will draw a triangle for \textit{each} three consecutive vertices. \texttt{vertices} will be drawn as \texttt{\{A,B,C\}, \{B,C,D\}, \{C,D,E\}}.
+\end{description}
+
+\subsubsection{c}
+This shows how to use \texttt{glDrawElements} to draw different images from the same vertex data, and how vertices are reused.
+
+\begin{lstlisting}
+// in display:
+mat4 modelView;
+
+// upper left
+modelView = Translate(-7,+7,0);
+glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, modelView);
+glDrawArrays(GL_TRIANGLE_FAN, 0, rectangleSize);
+
+// upper right
+modelView = Translate(+7,+7,0);
+glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, modelView);
+GLuint indices[6] = {0,1,2,3,4,0};
+glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices);
+
+// bottom left
+modelView = Translate(-7,-7,0);
+glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, modelView);
+GLuint indices_bl[6] = {2,3,4,0,1,5};
+glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices_bl);
+
+// bottom right
+modelView = Translate(+7,-7,0);
+glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, modelView);
+GLuint indices_br[9] = {1,2,3, 0,1,5, 3,4,5};
+glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, indices_br);
+\end{lstlisting}
+
 
 \subsection{Part 4}
-\begin{figure}[h]
-  \centering
-  \includegraphics[height=100pt]{images/exer_1_4}
-\end{figure}
+\fig{images/exer_1_4}
+
+To make this a generic circle creation i have made following function
+
+\begin{lstlisting}
+std::vector<Vertex> createCircleGeometry(GLfloat radius, vec2 origin, GLuint segments) {
+	std::vector<Vertex> vertices;
+
+	GLfloat segAngle = (2 * M_PI) / segments;
+	for (int i = 0; i < segments; i++) {
+		vertices.push_back({
+				vec2(cos(i * segAngle) * radius + origin.x,
+					 sin(i * segAngle) * radius + origin.y )
+		});
+	}
+	return vertices;
+}
+
+void loadGeometry() {
+	cirleVertexData = createCircleGeometry(0.8, vec2(0.0f, 0.0f), 10);
+}
+\end{lstlisting}
+
+The data is buffered:
+\begin{lstlisting}
+// in loadBufferData:
+glBufferData(GL_ARRAY_BUFFER, cirleVertexData.size() * sizeof(Vertex), &cirleVertexData[0], GL_STATIC_DRAW);
+\end{lstlisting}
+
+And drawn:
+\begin{lstlisting}
+// in display:
+glBindVertexArray(vertexArrayObject);
+glDrawArrays(GL_TRIANGLE_FAN, 0, cirleVertexData.size());
+\end{lstlisting}
+
+\subsection{Part 5}
+\fig{images/exer_1_5}
+
+I have made the image using two loops, one for the inner triangles and one for the outer. The inner loop simply rotates the \texttt{modelView} and draws the vertices with that transformation. The outer one is a little more complex as it must both translate, scale and rotate each triangle.
+
+\begin{lstlisting}
+int i;
+
+// inner
+modelView = Scale(1.0, -1.0, 1.0);
+for (i = 0; i < 4; i++)
+{
+	modelView *= RotateZ(90.0f); // rotate 90 deg every iteration
+	glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, modelView);
+	glDrawArrays(GL_TRIANGLES, 0, NUMBER_OF_VERTICES);
+}
+
+// outer
+for (i = 0; i < 4; i++)
+{
+	float scaleY = i % 2 == 0 ? -SQRT2 : SQRT2; // is right/left
+	float trans = i > 1 ? -1.0f : 1.0f; // is bottom/left
+	modelView = Translate(trans, trans, 0.0f);
+	modelView *= Scale(SQRT2, scaleY, SQRT2);
+	modelView *= RotateZ(45.0f + (float) i * 90.0f);
+	glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, modelView);
+	glDrawArrays(GL_TRIANGLES, 0, NUMBER_OF_VERTICES);
+}
+\end{lstlisting}
+
+
+\subsection{Part 7}
+The comments in the code should explain what's happening. The image is rendered with 5 subdivisions.
+
+\fig{images/exer_1_7}
+
+\begin{lstlisting}
+void square(const vec2& a, const vec2& b, const vec2& c, const vec2& d) {
+	// draw the square as two triangles across the diagonal
+    points.push_back(a);
+	points.push_back(b);
+	points.push_back(c);
+
+	points.push_back(a);
+	points.push_back(c);
+	points.push_back(d);
+}
+
+void divide_square(const vec2& a, const vec2& b, const vec2& c, const vec2& d, int count) {
+    if (count > 0) {
+		// side length of the *sub-square* of the current square
+		const float d = length((b - a) / 3.0f);
+
+		// utility vectors in the x and y directions used to computed
+		// sub-squares easily
+		const vec2 dx(d, 0.0f);
+		const vec2 dy(0.0f, d);
+
+		for (int y = 0; y < 3; y++) {
+			for (int x = 0; x < 3; x++) {
+				// leave the center square white
+				if (x == 1 && y == 1) continue;
+
+				// compute the sub-square coordinates using the (x,y)
+				// pair and the side lengths defined earlier
+				divide_square(a + x*dx     + y*dy,
+							  a + (x+1)*dx + y*dy,
+							  a + (x+1)*dx + (y+1)*dy,
+							  a + x*dx     + (y+1)*dy,
+							  count - 1);
+			}
+		}
+    } else {
+		// leaf, draw a black square
+        square( a, b, c, d );
+    }
+}
+
+// In the init function:
+void init( void ) {
+    vec2 vertices[4] = {
+        vec2( -1.0, -1.0 ),
+		vec2(  1.0, -1.0 ),
+		vec2(  1.0,  1.0 ),
+        vec2( -1.0,  1.0 )
+    };
+
+    // Subdivide the original square
+    divide_square( vertices[0], vertices[1], vertices[2], vertices[3], NumTimesToSubdivide);
+...
+\end{lstlisting}
+
 
 %%% Local Variables:
 %%% mode: latex

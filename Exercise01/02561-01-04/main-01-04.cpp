@@ -26,11 +26,6 @@ struct Vertex {
 	vec2 position;
 };
 
-struct CircleVertexData {
-	GLuint numVertices;
-	std::vector<Vertex> cirleVertexData;
-};
-
 std::vector<Vertex> cirleVertexData;
 
 // forward declaration
@@ -75,7 +70,6 @@ std::vector<Vertex> createCircleGeometry(GLfloat radius, vec2 origin, GLuint seg
 	std::vector<Vertex> vertices;
 
 	GLfloat segAngle = (2 * M_PI) / segments;
-	printf("%f %d", segAngle, segments);
 	for (int i = 0; i < segments; i++) {
 		vertices.push_back({
 				vec2(cos(i * segAngle) * radius + origin.x,

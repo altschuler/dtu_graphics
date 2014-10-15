@@ -13,6 +13,7 @@ int Index = 0;
 //----------------------------------------------------------------------------
 
 void square(const vec2& a, const vec2& b, const vec2& c, const vec2& d) {
+	// draw the square as two triangles across the diagonal
     points.push_back(a);
 	points.push_back(b);
 	points.push_back(c);
@@ -26,16 +27,21 @@ void square(const vec2& a, const vec2& b, const vec2& c, const vec2& d) {
 
 void divide_square(const vec2& a, const vec2& b, const vec2& c, const vec2& d, int count) {
     if (count > 0) {
-		float d = length((b - a) / 3.0f);
+		// side length of the *sub-square* of the current square
+		const float d = length((b - a) / 3.0f);
 
-		vec2 dx(d, 0.0f);
-		vec2 dy(0.0f, d);
+		// utility vectors in the x and y directions used to computed
+		// sub-squares easily
+		const vec2 dx(d, 0.0f);
+		const vec2 dy(0.0f, d);
 
 		for (int y = 0; y < 3; y++) {
 			for (int x = 0; x < 3; x++) {
-
+				// leave the center square white
 				if (x == 1 && y == 1) continue;
 
+				// compute the sub-square coordinates using the (x,y)
+				// pair and the side lengths defined earlier
 				divide_square(a + x*dx     + y*dy,
 							  a + (x+1)*dx + y*dy,
 							  a + (x+1)*dx + (y+1)*dy,
@@ -44,6 +50,7 @@ void divide_square(const vec2& a, const vec2& b, const vec2& c, const vec2& d, i
 			}
 		}
     } else {
+		// leaf, draw a black square
         square( a, b, c, d );
     }
 }
@@ -58,7 +65,7 @@ void init( void ) {
         vec2( -1.0,  1.0 )
     };
 
-    // Subdivide the original triangle
+    // Subdivide the original square
     divide_square( vertices[0], vertices[1], vertices[2], vertices[3],
 				   NumTimesToSubdivide );
 

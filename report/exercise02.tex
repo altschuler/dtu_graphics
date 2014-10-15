@@ -1,0 +1,123 @@
+\section{Exercise 2}
+
+\subsection{Part 1}
+The \texttt{Vertex} struct consists of only a \texttt{position} field, which is a \texttt{vec4} compared to \texttt{vec2} from exercise 1. The \texttt{vec4} represents a position in a homogeneous coordinates, hence we are working in 3D space.
+
+Since we are working in 3D, the \texttt{display} function now also computes projection matrices using either the \texttt{Ortho} or \texttt{Projection} function.
+
+Another new function is the \texttt{glUniformMatrix4fv} which changes the the \texttt{projection} variable in the vertex shader (\texttt{const-shader.vert}).
+
+\subsection{Part 2}
+\subsubsection{a}
+The \texttt{modelView} transformations were done in reverse order of the specification, due to \textit{column}-matrices.
+
+\begin{lstlisting}
+mat4 modelView(1.0f);
+modelView *= Translate(0.0f, 3.0f, 0.0f);
+modelView *= RotateY(30.0f);
+modelView *= Scale(2.0f);
+\end{lstlisting}
+
+\fig{images/exer_2_2}
+
+\subsubsection{b}
+Translate, Scale and RotateY.
+
+\subsubsection{c}
+If Scale is before Translate, one unit is twice the size
+
+\subsection{Part 3}
+
+\subsubsection{a}
+\fig{images/exer_2_3_front}
+\begin{lstlisting}
+vec4 eye(20.0f, 5.0f, 5.0f, 0);
+vec4 up(0.0f, 1.0f, 0.0f, 0);
+vec4 at(0.0f, 5.0f, 5.0f, 0);
+
+mat4 modelView;
+
+modelView *= LookAt(eye, at, up);
+modelView *= Scale(4.0f);
+\end{lstlisting}
+
+\subsubsection{b}
+\fig{images/exer_2_3_x}
+
+
+\subsection{Part 4}
+
+The \texttt{eye} is positioned on the diagonal of the cube and looks straight into it, thus creating the isometric view.
+
+\begin{lstlisting}
+vec4 eye(1.0f, 1.0f, 1.0f, 0);
+vec4 up(0.0f, 0.0f, 1.0f, 0);
+vec4 at(0.0f, 0.0f, 0.0f, 0);
+\end{lstlisting}
+
+\subsection{Part 5}
+
+\subsubsection{a}
+Rotate first then translate to eye position.
+
+Computing angle between \texttt{eye} and \texttt{at} using
+
+\[
+angle = acos\left( \frac{eye \bullet at}{\lvert eye \rvert \cdot \lvert at \rvert}  \right)
+\]
+
+\fig{images/exer_2_5_key2}
+
+\begin{lstlisting}
+vec4 eye = vec4(-.5, 1, 6, 1);
+vec4 at = vec4(-2, 1, 0, 1);
+
+float angle = acos((dot(eye, at)) / (length(eye) * length(at)));
+float angleDeg = angle * 180.0f * M_1_PI;
+
+view = mat4();
+view *= RotateY(angleDeg - 90);
+view *= Translate(.5, -1, -6);
+\end{lstlisting}
+
+\subsubsection{b}
+\texttt{eye} is opposite of the translation in \texttt{key3}.
+\begin{lstlisting}
+vec4 up(0, 1, 0, 0);
+vec4 eye(4, 1, 1, 0);
+vec4 at = RotateY(-92) * eye;
+
+view = LookAt(eye, at, up);
+\end{lstlisting}
+
+\subsubsection{c}
+
+\begin{lstlisting}
+view = mat4(1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			1, -1, -9, 1);
+\end{lstlisting}
+
+
+\subsection{Part 6}
+
+\subsubsection{a}
+
+1, 0, 0, 0,
+0, 0.894427299, -0.44721365, 0,
+0, 0.44721359, 0.89442718, 0,
+0, 0, -6.70820332, 1
+
+\subsubsection{b}
+\begin{lstlisting}
+modelView = mat4(1.73205078, 0, -1, 0,
+			     0, 2, 0, 0,
+				 1, 0, 1.73205078, 0,
+				 0, 3, 0, 1);
+\end{lstlisting}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

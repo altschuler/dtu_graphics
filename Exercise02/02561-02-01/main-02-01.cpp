@@ -42,10 +42,10 @@ void loadShader(){
 	}
 }
 
-void display() {	
+void display() {
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
-	
+
     glUseProgram(shaderProgram);
 
 	mat4 projection = Ortho(-5.0f, 5.0f, -5.0f, 5.0f, 30.0f, -30.0f);
@@ -55,12 +55,13 @@ void display() {
 	vec3 at(0,0,0);
 	vec3 up(0,1,0);
 	mat4 modelView = LookAt(eye, at, up);
+
 	glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, modelView);
 
 	glBindVertexArray(teapotVAO);
 
     glDrawArrays( GL_TRIANGLES, 0, numVertices);
-    
+
 	glutSwapBuffers();
 	Angel::CheckError();
 }
@@ -76,7 +77,7 @@ int main(int argc, char* argv[]) {
 	glutInitContextVersion(3, 2);
     glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
     glutInitContextProfile(GLUT_CORE_PROFILE);
-    
+
 	glutSetOption(
         GLUT_ACTION_ON_WINDOW_CLOSE,
         GLUT_ACTION_GLUTMAINLOOP_RETURNS
@@ -89,7 +90,7 @@ int main(int argc, char* argv[]) {
 	glutReshapeWindow(WINDOW_WIDTH, WINDOW_HEIGHT);
 
 	Angel::InitOpenGL();
-	
+
 	loadShader();
     teapotVAO = LoadTeapotVAO(numVertices,positionAttribute);
 

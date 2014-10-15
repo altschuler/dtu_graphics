@@ -59,7 +59,7 @@ void display() {
 	modelView = Scale(1.0, -1.0, 1.0);
 	for (i = 0; i < 4; i++)
 	{
-		modelView *= RotateZ(90.0f);
+		modelView *= RotateZ(90.0f); // rotate 90 deg every iteration
 		glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, modelView);
 		glDrawArrays(GL_TRIANGLES, 0, NUMBER_OF_VERTICES);
 	}

@@ -63,12 +63,12 @@ GLuint loadBufferData(Vertex* vertices, int vertexCount) {
 
     glGenVertexArrays(1, &vertexArrayObject);
     glBindVertexArray(vertexArrayObject);
-    
+
 	GLuint vertexBuffer;
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(Vertex), vertices, GL_STATIC_DRAW);
-    
+
     glEnableVertexAttribArray(positionAttribute);
     glVertexAttribPointer(positionAttribute, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)0);
 
@@ -125,22 +125,30 @@ void drawAxis() {
 	glDrawElements(GL_LINES, 8, GL_UNSIGNED_INT, indices);
 }
 
-void display() {	
+void display() {
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
-	
+
     glUseProgram(shaderProgram);
 
-	mat4 projection = Ortho(-6., 6., -6., 6., -6., 10.);
+	mat4 projection = Perspective(45.0f, 1.0f, -1.0f, 1.0f);
+
 	glUniformMatrix4fv(projectionUniform, 1, GL_TRUE, projection);
 
+	vec4 eye(20.0f, 5.0f, 5.0f, 0);
+	vec4 up(0.0f, 1.0f, 0.0f, 0);
+	vec4 at(10.0f, 5.0f, 0.0f, 0);
+
 	mat4 modelView;
+
+	modelView *= LookAt(eye, at, up);
+	modelView *= Scale(3.0f);
 
 	vec4 white(1.0, 1.0, 1.0, 1.0);
 	glUniform4fv(colorUniform, 1, white);
 	glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, modelView);
 	drawWireUnitCube();
-	
+
 	vec4 red(1.0, 0.0, 0.0, 1.0);
 	glUniform4fv(colorUniform, 1, red);
 	glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, modelView);
@@ -162,7 +170,7 @@ int main(int argc, char* argv[]) {
 	glutInitContextVersion(3, 2);
     glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
     glutInitContextProfile(GLUT_CORE_PROFILE);
-    
+
 	glutSetOption(
         GLUT_ACTION_ON_WINDOW_CLOSE,
         GLUT_ACTION_GLUTMAINLOOP_RETURNS
@@ -175,11 +183,11 @@ int main(int argc, char* argv[]) {
 	glutReshapeWindow(WINDOW_WIDTH, WINDOW_HEIGHT);
 
 	Angel::InitOpenGL();
-	
+
 	loadShader();
     buildUnitCube();
 	buildAxis();
-	
+
 	Angel::CheckError();
 
 	glutMainLoop();

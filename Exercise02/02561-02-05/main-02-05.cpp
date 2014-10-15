@@ -38,7 +38,15 @@ void key1(){
 
 void key2(){
     // todo replace with series of matrix transformations (using Translate, Rotate, Scale functions)
-    view = LookAt(vec4(-.5, 1, 6,1), vec4(-2,1,0,1), vec4(0,1,0,0));
+	vec4 eye(-.5, 1, 6, 1);
+	vec4 at(-2, 1, 0, 1);
+
+	float angle = acos((dot(eye, at))/(length(eye)*length(at)));
+	float angleDeg = angle * 180.0f * M_1_PI;
+
+	view = mat4();
+	view *= RotateY(angleDeg - 90);
+	view *= Translate(.5, -1, -6);
 }
 
 void key3(){
@@ -47,7 +55,12 @@ void key3(){
 
 void key4(){
     // todo replace with lookAt function
-    view = RotateY(-120) * Translate(-4, -1, -1);
+
+	vec4 up(0, 1, 0, 0);
+	vec4 eye(4, 1, 1, 0);
+	vec4 at = RotateY(-92) * eye;
+
+	view = LookAt(eye, at, up);
 }
 
 void key5(){
@@ -56,11 +69,11 @@ void key5(){
 
 void key6(){
     // todo replace with full hardcoded matrix using the following mat4 contructor
-    //    mat4( GLfloat m00, GLfloat m10, GLfloat m20, GLfloat m30,
-    //      GLfloat m01, GLfloat m11, GLfloat m21, GLfloat m31,
-    //      GLfloat m02, GLfloat m12, GLfloat m22, GLfloat m32,
-    //      GLfloat m03, GLfloat m13, GLfloat m23, GLfloat m33 )
-    view = LookAt(vec4(-1, 1, 9,1), vec4(-1,1,0,1), vec4(0,1,0,0));
+
+	view = mat4(1,  0,  0,  0,
+				0,  1,  0,  0,
+				0,  0,  1,  0,
+				1, -1, -9,  1);
 }
 
 void key0(){
@@ -68,21 +81,21 @@ void key0(){
 }
 
 
-void display() {	
+void display() {
 	glClearColor(0.4, 0.4, 1.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	
+
 	glUseProgram(shaderProgram);
 
 	glUniformMatrix4fv(projectionUniform, 1, GL_TRUE, projection);
-    
+
 	mat4 modelView = view * model;
     glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, modelView);
-    
+
 	glBindVertexArray(vertexArrayObject);
-    
+
     glDrawElements(GL_TRIANGLES, numberOfIndices, GL_UNSIGNED_INT, (void*)0);
-    
+
 	glutSwapBuffers();
 
 	Angel::CheckError();
@@ -108,15 +121,15 @@ void loadBufferData() {
 	glBufferData(GL_ARRAY_BUFFER, outPositions.size() * sizeof(vec3) * 2, nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, outPositions.size() * sizeof(vec3), outPositions[0]);
     glBufferSubData(GL_ARRAY_BUFFER, outPositions.size() * sizeof(vec3), outPositions.size() * sizeof(vec3), outNormal[0]);
-	
+
     GLuint  elementIndexBuffer;
 
     glGenBuffers(1, &elementIndexBuffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,  elementIndexBuffer);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*outIndices.size(), &(outIndices[0]), GL_STATIC_DRAW);
-	
+
     numberOfIndices = (int)outIndices.size();
-    
+
 	glEnableVertexAttribArray(positionAttribute);
 	glEnableVertexAttribArray(colorAttribute);
 	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, (const GLvoid *)0);
@@ -171,7 +184,7 @@ int main(int argc, char* argv[]) {
 	glutInitContextVersion(3, 2);
 	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
-	
+
 	glutSetOption(
 		GLUT_ACTION_ON_WINDOW_CLOSE,
 		GLUT_ACTION_GLUTMAINLOOP_RETURNS
@@ -185,7 +198,7 @@ int main(int argc, char* argv[]) {
 	glutReshapeWindow(WINDOW_WIDTH, WINDOW_HEIGHT);
     glEnable(GL_DEPTH_TEST);
 	Angel::InitOpenGL();
-		
+
 	loadShader();
 	loadBufferData();
 
