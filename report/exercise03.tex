@@ -2,6 +2,124 @@
 
 \subsection{Part 1}
 
+\subsubsection{a}
+\fig[Using position2 and color2]{images/exer_3_1a}
+\fig[Using position1 and color2]{images/exer_3_1aa}
+
+\subsubsection{b}
+\fig[Full \texttt{blendValue}]{images/exer_3_1b}
+
+\subsubsection{c}
+I have made a function \texttt{blend} that blends two \texttt{vec3}s using the \texttt{blendValue} uniform:
+
+\begin{lstlisting}
+vec3 blend(vec3 val1, vec3 val2) {
+	return (1 - blendValue) * val1 + blendValue * val2;
+}
+
+void main (void) {
+    colorV = blend(color1, color2);
+    gl_Position = projection * modelView * vec4(blend(position1, position2), 1.0);
+}
+\end{lstlisting}
+
+
+\subsection{Part 2}
+Code have been added and modified in a lot of different places. These are the most notable parts:
+
+\begin{lstlisting}
+// global
+float normalExtrusion = 0.0f;
+
+GLuint normalExtrusionUniform;
+
+struct Vertex {
+    vec3 position1;
+	vec3 color1;
+	vec3 normal1;
+
+	vec3 position2;
+	vec3 color2;
+	vec3 normal2;
+};
+
+// in loadShader:
+normalExtrusionUniform = glGetUniformLocation(shaderProgram, "normalExtrusion");
+if (normalExtrusionUniform == GL_INVALID_INDEX) {
+	cerr << "Shader did not contain/use the 'normalExtrusion' uniform."<<endl;
+}
+
+// in display:
+glUniform1fv(normalExtrusionUniform, 1, &normalExtrusion);
+
+// refactored keyboard:
+void keyboard(unsigned char key, int x, int y) {
+	// allow keyboard access if scroll wheel is unavailable
+	switch (key) {
+	case '+':
+		mouseWheel(0, 1, 0,0 );
+		break;
+
+	case '-':
+		mouseWheel(0, -1, 0,0 );
+		break;
+
+	case 'n':
+		normalExtrusion += 1;
+		break;
+
+	case 'm':
+		normalExtrusion -= 1;
+		break;
+	}
+}
+
+// in uploadData:
+// the normals are inserted after each position so
+// the pointer is shifted accordingly afterwards
+glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(0));
+glVertexAttribPointer(colorAttribute, 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(sizeof(vec3)));
+glVertexAttribPointer(normalAttribute, 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(sizeof(vec3)*2));
+
+glVertexAttribPointer(position2Attribute, 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(sizeof(vec3)*3));
+glVertexAttribPointer(color2Attribute, 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(sizeof(vec3)*4));
+glVertexAttribPointer(normal2Attribute, 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(sizeof(vec3)*5));
+\end{lstlisting}
+
+The position of the blended normals are added to the position in the vertex shader:
+
+\begin{lstlisting}
+void main (void) {
+    colorV = blend(color1, color2);
+    vec3 pos = blend(position1, position2);
+	pos += normalExtrusion * blend(normal1, normal2);
+
+    gl_Position = projection * modelView * vec4(pos, 1.0);
+}
+\end{lstlisting}
+
+\fig[Result with blend=0.5 and extrusion=5]{images/exer_3_2p.png}
+\fig[Result with blend=0 and extrusion=-3]{images/exer_3_2m.png}
+
+\subsection{Part 3}
+\textbf{What is the difference between a vertex attribute and a vertex uniform variable used in a shader? When can they be changed?}
+Vertex attributes have values per vertex, whereas a vertex uniform's value is the same for all vertices. That is why the attributes are set using \texttt{glVertexAttribPointer} and an offset from the \texttt{Vertex} struct pointing at the correspondig field.
+
+\textbf{Explain in general terms how a vertex shader works.}
+The vertex shader operates on each uploaded vertex, for which it can manipulate, among others, position and color. The code written in the shader (the \texttt{.vert} file) will be executed once per frame for each vertex.
+
+The vertex shader, as discussed above, has uniforms and attributes which are the means by which it can communicate with the host program.
+
+\textbf{Explain in general terms how a fragment shader works.}
+A fragment shader operates on every pixel and runs \textit{after} the vertex shader. It can manipulate the color of pixels and has access to other pixels in the frame buffer, so it can compute blending and similar effects. It can usually be thought of as post-processing of the rasterized image.
+
+\textbf{Describe what happens between the vertex shader and the fragment shader.}
+The first step after vertex shading is clipping. Primitives that are completely off-screen, i.e. outside the so-called viewing frustrum, are discarded as they will have no further effect on the output, other than requiring resources.
+
+Next is rasterization where 3D objects are transformed into a set of fragments, which are basically just pixels. In the rest of the pipeline, calculations are carried out in 2D on these fragments, including the fragments shader, which is also aptly named the pixel shader.
+
+\textbf{Is it possible to blend the color in the fragment shader instead of the vertex shader? If so, it it a good idea doing this?}
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "main"

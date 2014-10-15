@@ -8,6 +8,8 @@ Since we are working in 3D, the \texttt{display} function now also computes proj
 Another new function is the \texttt{glUniformMatrix4fv} which changes the the \texttt{projection} variable in the vertex shader (\texttt{const-shader.vert}).
 
 \subsection{Part 2}
+\fig{images/exer_2_2}
+
 \subsubsection{a}
 The \texttt{modelView} transformations were done in reverse order of the specification, due to \textit{column}-matrices.
 
@@ -18,18 +20,18 @@ modelView *= RotateY(30.0f);
 modelView *= Scale(2.0f);
 \end{lstlisting}
 
-\fig{images/exer_2_2}
 
 \subsubsection{b}
-Translate, Scale and RotateY.
+I used Translate, Scale and RotateY.
 
 \subsubsection{c}
-If Scale is before Translate, one unit is twice the size
+If Scale is done before Translate then one translation unit becomes twice the size, thus translating the object further.
 
 \subsection{Part 3}
 
 \subsubsection{a}
-\fig{images/exer_2_3_front}
+\fig[one-point perspective]{images/exer_2_3_front}
+
 \begin{lstlisting}
 vec4 eye(20.0f, 5.0f, 5.0f, 0);
 vec4 up(0.0f, 1.0f, 0.0f, 0);
@@ -42,7 +44,7 @@ modelView *= Scale(4.0f);
 \end{lstlisting}
 
 \subsubsection{b}
-\fig{images/exer_2_3_x}
+\fig[two-point perspective]{images/exer_2_3_x}
 
 
 \subsection{Part 4}
@@ -58,15 +60,13 @@ vec4 at(0.0f, 0.0f, 0.0f, 0);
 \subsection{Part 5}
 
 \subsubsection{a}
-Rotate first then translate to eye position.
-
-Computing angle between \texttt{eye} and \texttt{at} using
+I rotated first then translate to eye position. The angle between \texttt{eye} and \texttt{at} is computed as:
 
 \[
 angle = acos\left( \frac{eye \bullet at}{\lvert eye \rvert \cdot \lvert at \rvert}  \right)
 \]
 
-\fig{images/exer_2_5_key2}
+\fig{images/exer_2_5_key2}{}
 
 \begin{lstlisting}
 vec4 eye = vec4(-.5, 1, 6, 1);
@@ -103,19 +103,28 @@ view = mat4(1, 0, 0, 0,
 \subsection{Part 6}
 
 \subsubsection{a}
+The resulting matrix is the following
+\[
+\left[ {\begin{array}{cccc}
+      1 & 0 & 0 & 0 \\
+      0 & 0.894427299 & -0.44721365 & 0 \\
+      0 & 0.44721359 & 0.89442718 & 0 \\
+      0 & 0 & -6.70820332 & 1
+    \end{array} } \right]
+\]
 
-1, 0, 0, 0,
-0, 0.894427299, -0.44721365, 0,
-0, 0.44721359, 0.89442718, 0,
-0, 0, -6.70820332, 1
 
 \subsubsection{b}
-\begin{lstlisting}
-modelView = mat4(1.73205078, 0, -1, 0,
-			     0, 2, 0, 0,
-				 1, 0, 1.73205078, 0,
-				 0, 3, 0, 1);
-\end{lstlisting}
+The resulting matrix is the following
+\[
+\left[ {\begin{array}{cccc}
+      1.73205078 & 0 & -1 & 0 \\
+      0 & 2 & 0 & 0 \\
+      1 & 0 & 1.73205078 & 0 \\
+      0 & 3 & 0 & 1
+    \end{array} } \right]
+\]
+
 
 %%% Local Variables:
 %%% mode: latex

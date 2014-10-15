@@ -18,19 +18,25 @@ int WINDOW_HEIGHT = 800;
 GLuint shaderProgram;
 GLuint projectionUniform,
 	modelViewUniform,
-	blendValueUniform;
+	blendValueUniform,
+	normalExtrusionUniform;
 GLuint positionAttribute,
 	colorAttribute,
+	normalAttribute,
 	position2Attribute,
-	color2Attribute;
+	color2Attribute,
+	normal2Attribute;
 GLuint vertexArrayObject,
 	vertexBuffer;
 
 struct Vertex {
     vec3 position1;
 	vec3 color1;
+	vec3 normal1;
+
 	vec3 position2;
 	vec3 color2;
+	vec3 normal2;
 };
 
 vector<unsigned int> indices;
@@ -40,23 +46,28 @@ float dist = 160; // last component of spherical coordinates
 vec2 angleOffset;
 vec2 mousePos;
 float blendValue = 0.0f;
+float normalExtrusion = 0.0f;
 
 void loadShader();
 void display();
 
-vector<Vertex> interleaveData(vector<float> &position, vector<float> &color, vector<float> &position2, vector<float> &color2){
+vector<Vertex> interleaveData(vector<float> &position, vector<float> &color, vector<float> &normal, vector<float> &position2, vector<float> &color2, vector<float> &normal2){
 	vector<Vertex> interleavedVertexData;
 	for (int i=0;i<position.size();i=i+3){
 		vec3 positionVec(position[i],position[i+1],position[i+2]);
 		vec3 colorVec(color[i],color[i+1],color[i+2]);
+		vec3 normalVec(normal[i],normal[i+1],normal[i+2]);
 		vec3 positionVec2(position2[i],position2[i+1],position2[i+2]);
 		vec3 colorVec2(color2[i],color2[i+1],color2[i+2]);
+		vec3 normalVec2(normal2[i],normal2[i+1],normal2[i+2]);
 
 		Vertex v = {
 			positionVec,
 			colorVec,
+			normalVec,
 			positionVec2,
-			colorVec2
+			colorVec2,
+			normalVec2
 		};
 
 		interleavedVertexData.push_back(v);
@@ -75,13 +86,19 @@ void uploadData(vector<Vertex> &interleavedVertexData){
 	GLuint stride = sizeof(Vertex);
 	glEnableVertexAttribArray(positionAttribute);
 	glEnableVertexAttribArray(colorAttribute);
+	glEnableVertexAttribArray(normalAttribute);
+
 	glEnableVertexAttribArray(position2Attribute);
 	glEnableVertexAttribArray(color2Attribute);
+	glEnableVertexAttribArray(normal2Attribute);
 
 	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(0));
-	glVertexAttribPointer(colorAttribute , 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(sizeof(vec3)));
-	glVertexAttribPointer(position2Attribute, 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(sizeof(vec3)*2));
-	glVertexAttribPointer(color2Attribute , 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(sizeof(vec3)*3));
+	glVertexAttribPointer(colorAttribute, 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(sizeof(vec3)));
+	glVertexAttribPointer(normalAttribute, 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(sizeof(vec3)*2));
+
+	glVertexAttribPointer(position2Attribute, 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(sizeof(vec3)*3));
+	glVertexAttribPointer(color2Attribute, 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(sizeof(vec3)*4));
+	glVertexAttribPointer(normal2Attribute, 3, GL_FLOAT, GL_FALSE, stride, (const GLvoid *)(sizeof(vec3)*5));
 }
 
 void initData(char * mesh1, char * mesh2){
@@ -101,7 +118,7 @@ void initData(char * mesh1, char * mesh2){
 		}
 	}
 	cout << "Interleaving data" << endl;
-	vector<Vertex> interleavedVertexData = interleaveData(position[0], color[0], position[1], color[1]);
+	vector<Vertex> interleavedVertexData = interleaveData(position[0], color[0], normal[0], position[1], color[1], normal[1]);
 
 	cout << "Uploading data" << endl;
 	uploadData(interleavedVertexData);
@@ -111,6 +128,7 @@ void initData(char * mesh1, char * mesh2){
 void loadShader(){
 	shaderProgram = InitShader("blending.vert",  "blending.frag", "fragColor");
 	projectionUniform = glGetUniformLocation(shaderProgram, "projection");
+
 	if (projectionUniform == GL_INVALID_INDEX) {
 		cerr << "Shader did not contain/use the 'projection' uniform."<<endl;
 	}
@@ -122,6 +140,11 @@ void loadShader(){
 	if (blendValueUniform == GL_INVALID_INDEX) {
 		cerr << "Shader did not contain/use the 'blendValue' uniform."<<endl;
 	}
+	normalExtrusionUniform = glGetUniformLocation(shaderProgram, "normalExtrusion");
+	if (normalExtrusionUniform == GL_INVALID_INDEX) {
+		cerr << "Shader did not contain/use the 'normalExtrusion' uniform."<<endl;
+	}
+
 	colorAttribute = glGetAttribLocation(shaderProgram, "color1");
 	if (colorAttribute == GL_INVALID_INDEX) {
 		cerr << "Shader did not contain/use the 'color1' attribute." << endl;
@@ -130,6 +153,12 @@ void loadShader(){
 	if (positionAttribute == GL_INVALID_INDEX){
 		cerr << "Shader did not contain/use the 'position1' attribute." << endl;
 	}
+	normalAttribute = glGetAttribLocation(shaderProgram, "normal1");
+	if (normalAttribute == GL_INVALID_INDEX){
+		cerr << "Shader did not contain/use the 'normal1' attribute." << endl;
+	}
+
+
 	color2Attribute = glGetAttribLocation(shaderProgram, "color2");
 	if (color2Attribute == GL_INVALID_INDEX) {
 		cerr << "Shader did not contain/use the 'color2' attribute." << endl;
@@ -138,13 +167,17 @@ void loadShader(){
 	if (position2Attribute == GL_INVALID_INDEX){
 		cerr << "Shader did not contain/use the 'position2' attribute." << endl;
 	}
+	normal2Attribute = glGetAttribLocation(shaderProgram, "normal2");
+	if (normal2Attribute == GL_INVALID_INDEX){
+		cerr << "Shader did not contain/use the 'normal2' attribute." << endl;
+	}
 }
 
 void updateTitle(){
 	static int count = 0;
 	if (count == 10){
 		char buffer[50];
-		sprintf(buffer, "VertexBlend: Blend %.2f", blendValue);
+		sprintf(buffer, "VertexBlend: Blend %.2f, Normal extrusion: %.2f", blendValue, normalExtrusion);
 		glutSetWindowTitle(buffer);
 		count = 0;
 	}
@@ -164,6 +197,7 @@ void display() {
 	glUniformMatrix4fv(projectionUniform, 1, GL_TRUE, projection);
 	glUniformMatrix4fv(modelViewUniform, 1, GL_TRUE, view);
 	glUniform1fv(blendValueUniform, 1, &blendValue);
+	glUniform1fv(normalExtrusionUniform, 1, &normalExtrusion);
 
     // vertex shader uniforms
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, &indices[0]);
@@ -220,12 +254,24 @@ void mouseWheel(int button, int dir, int x, int y) {
 	}
 }
 
-void keyboard(unsigned char key, int x, int y){
+void keyboard(unsigned char key, int x, int y) {
 	// allow keyboard access if scroll wheel is unavailable
-	if (key == '+') {
+	switch (key) {
+	case '+':
 		mouseWheel(0, 1, 0,0 );
-	} else if (key == '-') {
+		break;
+
+	case '-':
 		mouseWheel(0, -1, 0,0 );
+		break;
+
+	case 'n':
+		normalExtrusion += 1;
+		break;
+
+	case 'm':
+		normalExtrusion -= 1;
+		break;
 	}
 }
 

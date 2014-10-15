@@ -17,7 +17,7 @@
 \usepackage{enumitem}
 \usepackage{colortbl}
 \usepackage{float}
-%\usepackage{MnSymbol}
+\usepackage{xifthen}
 
 \setlength{\parindent}{0pt}
 
@@ -32,12 +32,16 @@
 \chead{All exercises}
 \rhead{Simon Altschuler (s123563)}
 
-\newcommand{\fig}[1]{
+\newcommand{\fig}[2][]{
 \begin{figure}[H]
 \centering
-  \includegraphics[height=150pt]{#1}
+  \includegraphics[height=150pt]{#2}
+  \ifthenelse { \equal {#1} {} }
+  {}
+  { \caption{#1} }   % else (not blank)
 \end{figure}
 }
+
 \newcommand{\code}[1]{\lstinline[basicstyle=\rmfamily\normalsize, prebreak=, keywordstyle=\ttfamily]{#1}}
 
 \definecolor{thegrey}{rgb}{0.9,0.9,0.9}
@@ -72,6 +76,9 @@ TODO: 1.6, 2.3
 
 \newpage
 \input{exercise02.tex}
+
+\newpage
+\input{exercise03.tex}
 
 \end{document}
 
